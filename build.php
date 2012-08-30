@@ -215,34 +215,36 @@ class FrontBuilder {
      * manifest and saves the output to the release folder
      */
     private function buildJavascript() {
-        $javaScript = '';
-        $compileParams = implode(' ', $this->project->closureBuildParameters);
+        if(isset($this->project->files) && count($this->project->files) > 0) {
+            $javaScript = '';
+            $compileParams = implode(' ', $this->project->closureBuildParameters);
 
-        foreach ($this->project->files as $file) {
-            if (!file_exists($this->appPath . '/' . $file)) {
-                trigger_error("Connot include $this->appPath/$file.", E_USER_ERROR);
+            foreach ($this->project->files as $file) {
+                if (!file_exists($this->appPath . '/' . $file)) {
+                    trigger_error("Connot include $this->appPath/$file.", E_USER_ERROR);
+                }
+
+                $javaScript .= file_get_contents($this->appPath . '/' . $file) . PHP_EOL;
             }
 
-            $javaScript .= file_get_contents($this->appPath . '/' . $file) . PHP_EOL;
-        }
-        
-        if(!$this->debug) {
-            file_put_contents($this->tmpJsFile, $javaScript);
+            if(!$this->debug) {
+                file_put_contents($this->tmpJsFile, $javaScript);
 
-            echo 'Build: java -jar ./compiler.jar '
-            . $compileParams . ' --js ./' . $this->tmpJsFile
-            . ' --js_output_file '
-            . $this->project->releaseFolder . '/' . $this->project->build->jsPath . PHP_EOL;
+                echo 'Build: java -jar ./compiler.jar '
+                . $compileParams . ' --js ./' . $this->tmpJsFile
+                . ' --js_output_file '
+                . $this->project->releaseFolder . '/' . $this->project->build->jsPath . PHP_EOL;
 
-            echo system('java -jar ' . $this->compilerPath . '/compiler.jar '
-                    . $compileParams . ' --js ./' . $this->tmpJsFile
-                    . ' --js_output_file '
-                    . $this->project->releaseFolder . '/' . $this->project->build->jsPath);
+                echo system('java -jar ' . $this->compilerPath . '/compiler.jar '
+                        . $compileParams . ' --js ./' . $this->tmpJsFile
+                        . ' --js_output_file '
+                        . $this->project->releaseFolder . '/' . $this->project->build->jsPath);
 
-            unlink($this->tmpJsFile);
-        } else {
-            echo "Debug: " .$this->project->releaseFolder . '/' . $this->project->build->jsPath . PHP_EOL;
-            file_put_contents($this->project->releaseFolder . '/' . $this->project->build->jsPath, $javaScript);
+                unlink($this->tmpJsFile);
+            } else {
+                echo "Debug: " .$this->project->releaseFolder . '/' . $this->project->build->jsPath . PHP_EOL;
+                file_put_contents($this->project->releaseFolder . '/' . $this->project->build->jsPath, $javaScript);
+            }
         }
     }
 
@@ -251,34 +253,34 @@ class FrontBuilder {
      * manifest and saves the output to the release folder
      */
     private function buildStyle() {
-        $style = '';
-        $compressParams = implode(' ', $this->project->compressorBuildParameters);
+        if(isset($this->project->styles) && count($this->project->styles) > 0) {
+            $style = '';
+            $compressParams = implode(' ', $this->project->compressorBuildParameters);
 
-        foreach ($this->project->styles as $file) {
-            if (!file_exists($this->appPath . '/' . $file)) {
-                trigger_error("Connot include $this->appPath/$file.", E_USER_ERROR);
+            foreach ($this->project->styles as $file) {
+                if (!file_exists($this->appPath . '/' . $file)) {
+                    trigger_error("Connot include $this->appPath/$file.", E_USER_ERROR);
+                }
+                $style .= file_get_contents($this->appPath . '/' . $file) . PHP_EOL;
             }
-            $style .= file_get_contents($this->appPath . '/' . $file) . PHP_EOL;
-        }
-        
-        if(!$this->debug) {
-            file_put_contents($this->tmpCssFile, $style);
-        
-            echo "Build: java -jar ./compressor.jar $compressParams $this->tmpCssFile " .
-            "-o {$this->project->releaseFolder}/{$this->project->build->cssPath}" .
-            PHP_EOL;
 
-            echo system("java -jar $this->compilerPath/compressor.jar $compressParams " .
-                    "--type css ./$this->tmpCssFile " .
-                    "-o {$this->project->releaseFolder}/{$this->project->build->cssPath}");
-                    
-            unlink($this->tmpCssFile);
-        } else {
-            echo "Debug: {$this->project->releaseFolder}/{$this->project->build->cssPath}" . PHP_EOL;
-            file_put_contents("{$this->project->releaseFolder}/{$this->project->build->cssPath}", $style);
-        }
+            if(!$this->debug) {
+                file_put_contents($this->tmpCssFile, $style);
 
-        
+                echo "Build: java -jar ./compressor.jar $compressParams $this->tmpCssFile " .
+                "-o {$this->project->releaseFolder}/{$this->project->build->cssPath}" .
+                PHP_EOL;
+
+                echo system("java -jar $this->compilerPath/compressor.jar $compressParams " .
+                        "--type css ./$this->tmpCssFile " .
+                        "-o {$this->project->releaseFolder}/{$this->project->build->cssPath}");
+
+                unlink($this->tmpCssFile);
+            } else {
+                echo "Debug: {$this->project->releaseFolder}/{$this->project->build->cssPath}" . PHP_EOL;
+                file_put_contents("{$this->project->releaseFolder}/{$this->project->build->cssPath}", $style);
+            }
+        }
     }
 
 }
