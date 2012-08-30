@@ -1,0 +1,25 @@
+{
+    "projectName": "<project name>",
+    "releaseFolder": "<release folder>",
+    
+    "closureBuildParameters": [
+        "--compilation_level SIMPLE_OPTIMIZATIONS"
+    ],
+    "compressorBuildParameters": [
+        
+    ],
+    "resources": [
+        "theme/images"
+    ],
+    "styles": [
+        "theme/silver.css",
+        "theme/style.css"
+    ],
+    "files": [
+        "./script.js"
+    ],
+    "build": {
+        "cssPath": "theme/style.min.css",
+        "jsPath": "script.min.js"
+    }
+}
