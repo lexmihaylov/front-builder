@@ -1,10 +1,11 @@
 <?php
-/*******************************************************************************
+
+/* * *****************************************************************************
  * Project: FrontBuilder
  * ============================================================================
  * FrontBuilder is a simple tool developed for execution with php-cli, that 
  * enables developer to automate the optimization of javascript and css files in
- * their project. FrontBuilder uses google-closute-compiler for the optimization
+ * their project. FrontBuilder uses google-closure-compiler for the optimization
  * of javascript and yui-compressor for css files. FrontBuilder depends on a
  * manifest json file in the root of the front end project to provide 
  * information about the build process.
@@ -16,49 +17,51 @@
  * Company:     158ltd.com (http://www.158ltd.com)
  * GitHub:      https://github.com/lexmihaylov
  * 
- ******************************************************************************/
+ * **************************************************************************** */
 
 /**
  * Usage: FrontBuilder::main($argc, $argv);
  */
 class FrontBuilder {
+
     /**
      * Holds the manifest's filename
      * @var string 
      */
     private $manifest;
-    
+
     /**
      * Holds the configuration data loaded from the manifest
      * @var stdClass
      */
     private $project;
-    
+
     /**
      * Holds the path to the compilator executables
      * @var string 
      */
     private $compilerPath;
+
     /**
      * Holds the path to the front end application
      * @var string 
      */
     private $appPath;
-    
+
     /**
      * Holds the name of the temp file that contains the javascript that will be
      * optimized
      * @var string 
      */
     private $tmpJsFile;
-    
+
     /**
      * Holds the name of the temp file that contains the css that will be
      * optimized
      * @var string 
      */
     private $tmpCssFile;
-    
+
     /**
      * Indicates if building for debugging purposes
      * @var boolean 
@@ -72,7 +75,7 @@ class FrontBuilder {
      */
     public function __construct($manifest = 'manifest.json') {
         $this->manifest = basename($manifest);
-        $this->compilerPath = dirname(dirname(__FILE__)).'/opt';
+        $this->compilerPath = dirname(dirname(__FILE__)) . '/opt';
         $this->appPath = dirname($manifest);
     }
 
@@ -105,13 +108,13 @@ class FrontBuilder {
         $this->buildJavascript();
         $this->buildStyle();
     }
-    
+
     /**
      * Evaluates arguments passed by the shell
      * @param array $argv 
      */
     private function setArguments($argv) {
-        for($i = 1; $i < count($argv); $i++) {
+        for ($i = 1; $i < count($argv); $i++) {
             switch ($argv[$i]) {
                 case '-h':
                 case '--h':
@@ -120,10 +123,10 @@ class FrontBuilder {
                     echo "Usage:\n" .
                     "  php build [--debug]\n" .
                     "  php ./build [--debug][project manifest]\n" .
-                    "  php ./build --help\n\n".
-                    "  --help  \tShows this screen.\n".
-                    "  --debug \tMerges all the files together and creates the ".
-                    "release folder but does not optimizes css and javascript.\n".
+                    "  php ./build --help\n\n" .
+                    "  --help  \tShows this screen.\n" .
+                    "  --debug \tMerges all the files together and creates the " .
+                    "release folder but does not optimizes css and javascript.\n" .
                     "  --version  \tPrints the version of FrontBuilder.\n";
 
                     exit(0);
@@ -145,7 +148,7 @@ class FrontBuilder {
             }
         }
     }
-    
+
     /**
      * Set the names of the temporary css and js files 
      */
@@ -180,7 +183,7 @@ class FrontBuilder {
             mkdir($this->project->releaseFolder);
         } else {
             echo "Cleaning {$this->project->releaseFolder} folder" . PHP_EOL;
-            system("rm -r {$this->project->releaseFolder}/*");
+            echo shell_exec("rm -r {$this->project->releaseFolder}/*");
         }
     }
 
@@ -188,24 +191,26 @@ class FrontBuilder {
      * Copies the resources defined in the manifest file to the realease folder 
      */
     private function copyResourses() {
-        foreach ($this->project->resources as $resource) {
-            $resoursePath = dirname($resource);
-            $directoriesToResource = explode('/', $resoursePath);
+        if(isset($this->project->resources)) {
+            foreach ($this->project->resources as $resource) {
+                $resoursePath = dirname($resource);
+                $directoriesToResource = explode('/', $resoursePath);
 
-            $newResourcePath = $this->project->releaseFolder;
-            foreach ($directoriesToResource as $directory) {
-                $newResourcePath .= '/' . $directory;
-                if (!is_dir($newResourcePath)) {
-                    mkdir($newResourcePath);
+                $newResourcePath = $this->project->releaseFolder;
+                foreach ($directoriesToResource as $directory) {
+                    $newResourcePath .= '/' . $directory;
+                    if (!is_dir($newResourcePath)) {
+                        mkdir($newResourcePath);
+                    }
                 }
-            }
 
-            if (is_dir($resource)) {
-                system("cp -r $resource $newResourcePath");
-            } elseif (file_exists($resource)) {
-                system("cp $resource $newResourcePath");
-            } else {
-                trigger_error("Cannot copy resource: $resource", E_USER_ERROR);
+                if (is_dir($resource)) {
+                    echo shell_exec("cp -r $resource $newResourcePath");
+                } elseif (file_exists($resource)) {
+                    echo shell_exec("cp $resource $newResourcePath");
+                } else {
+                    trigger_error("Cannot copy resource: $resource", E_USER_ERROR);
+                }
             }
         }
     }
@@ -215,19 +220,19 @@ class FrontBuilder {
      * manifest and saves the output to the release folder
      */
     private function buildJavascript() {
-        if(isset($this->project->files) && count($this->project->files) > 0) {
+        if (isset($this->project->files) && count($this->project->files) > 0) {
             $javaScript = '';
             $compileParams = implode(' ', $this->project->closureBuildParameters);
 
             foreach ($this->project->files as $file) {
-                if (!file_exists($this->appPath . '/' . $file)) {
-                    trigger_error("Connot include $this->appPath/$file.", E_USER_ERROR);
+                if (!file_exists($file)) {
+                    trigger_error("Connot include $file.", E_USER_ERROR);
                 }
 
-                $javaScript .= file_get_contents($this->appPath . '/' . $file) . PHP_EOL;
+                $javaScript .= file_get_contents($file) . PHP_EOL;
             }
 
-            if(!$this->debug) {
+            if (!$this->debug) {
                 file_put_contents($this->tmpJsFile, $javaScript);
 
                 echo 'Build: java -jar ./compiler.jar '
@@ -235,14 +240,14 @@ class FrontBuilder {
                 . ' --js_output_file '
                 . $this->project->releaseFolder . '/' . $this->project->build->jsPath . PHP_EOL;
 
-                echo system('java -jar ' . $this->compilerPath . '/compiler.jar '
+                echo shell_exec('java -jar ' . $this->compilerPath . '/compiler.jar '
                         . $compileParams . ' --js ./' . $this->tmpJsFile
                         . ' --js_output_file '
                         . $this->project->releaseFolder . '/' . $this->project->build->jsPath);
 
                 unlink($this->tmpJsFile);
             } else {
-                echo "Debug: " .$this->project->releaseFolder . '/' . $this->project->build->jsPath . PHP_EOL;
+                echo "Debug: " . $this->project->releaseFolder . '/' . $this->project->build->jsPath . PHP_EOL;
                 file_put_contents($this->project->releaseFolder . '/' . $this->project->build->jsPath, $javaScript);
             }
         }
@@ -253,25 +258,25 @@ class FrontBuilder {
      * manifest and saves the output to the release folder
      */
     private function buildStyle() {
-        if(isset($this->project->styles) && count($this->project->styles) > 0) {
+        if (isset($this->project->styles) && count($this->project->styles) > 0) {
             $style = '';
             $compressParams = implode(' ', $this->project->compressorBuildParameters);
 
             foreach ($this->project->styles as $file) {
-                if (!file_exists($this->appPath . '/' . $file)) {
-                    trigger_error("Connot include $this->appPath/$file.", E_USER_ERROR);
+                if (!file_exists($file)) {
+                    trigger_error("Connot include $file.", E_USER_ERROR);
                 }
-                $style .= file_get_contents($this->appPath . '/' . $file) . PHP_EOL;
+                $style .= file_get_contents($file) . PHP_EOL;
             }
 
-            if(!$this->debug) {
+            if (!$this->debug) {
                 file_put_contents($this->tmpCssFile, $style);
 
                 echo "Build: java -jar ./compressor.jar $compressParams $this->tmpCssFile " .
                 "-o {$this->project->releaseFolder}/{$this->project->build->cssPath}" .
                 PHP_EOL;
 
-                echo system("java -jar $this->compilerPath/compressor.jar $compressParams " .
+                echo shell_exec("java -jar $this->compilerPath/compressor.jar $compressParams " .
                         "--type css ./$this->tmpCssFile " .
                         "-o {$this->project->releaseFolder}/{$this->project->build->cssPath}");
 
@@ -282,5 +287,7 @@ class FrontBuilder {
             }
         }
     }
+
 }
+
 ?>
